@@ -1,0 +1,115 @@
+body {
+  font-family: sans-serif;
+  background-color: #e0ecff;
+  margin: 0;
+}
+
+body.with-margin {
+  margin-left: 1em;
+}
+
+form.form-box, #account-management, #main-content-container, #manage-friends {
+  background-color: #d3e2ff;
+  padding: 0.5em;
+}
+
+form.form-box {
+  padding:2em;
+  width:80%;
+  margin:auto;
+  border-radius: 1em;
+  box-shadow: 1px 1px 5px #00000061;
+  padding: 2em;
+}
+
+input {
+  min-width: 5em;
+  max-width: 100%;
+  margin-bottom: 1em;
+  font-size: 12pt;
+  border: 2px outset #99b8ff78;
+}
+
+input[type="submit"] {
+}
+
+label {
+  display: block;
+  width: 10em;
+  padding-top: 0.3em;
+  padding-bottom: 0.3em;
+  padding-left: 0.1em;
+}
+
+label:first-child {
+  font-weight:bold;
+}
+
+.error {
+    background-color: #ff7c7c;
+    color: #000000;
+}
+
+#account-management, #main-content-container, #manage-friends {
+}
+
+#main-content-container {
+  width:50em;
+  border-left: 3px solid #1a2e80;
+  border-right: 3px solid #1a2e80;
+}
+
+#account-management {
+  width:8em;
+}
+
+#manage-friends {
+  width:20em;
+}
+  
+ul.plain {
+  list-style-type: none;
+  margin:0;
+  padding:0;
+}
+
+ul.plain > li {
+  margin-bottom: 1em;
+}
+
+#framework-root {
+  display: flex;
+  flex-flow: row wrap;
+}
+
+div.post, div.make-post-container {
+  padding: 0.5em;
+  background-color: #ecf2ff;
+  margin-bottom: 1em;
+}
+
+textarea.status {
+  font-family: inherit;
+}
+
+.update-status-success {
+  border:
+}
+
+.update-status-failure {
+  background-color: red
+
+}
+
+.update-status {
+  font-weight:bold;
+  font-size: larger;
+  background-color: #99bcff;
+  border: 0.2em solid #5b679b;
+  border-radius: 0.3em;
+  display: inline-block;
+}
+
+.update-status p {
+  margin: 0.2em
+}
