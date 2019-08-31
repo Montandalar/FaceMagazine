@@ -41,6 +41,15 @@ function db_connect(&$handle) {
     if (!oci_execute($stmt)) {
         echo "Couldn't set database date format!";
     }
+
+    $stmt = oci_parse($handle,
+            "ALTER SESSION SET NLS_TIMESTAMP_FORMAT =
+            'YYYY-MM-DD HH24:MI'"
+            );
+
+    if (!oci_execute($stmt)) {
+        echo "Couldn't set the database timestamp format!";
+    }
 }
 
 function make_password($plaintext) {

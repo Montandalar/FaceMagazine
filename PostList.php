@@ -17,11 +17,12 @@ class PostList extends Component {
     <textarea name="body"></textarea>
     <input value="Make post" type="submit"/>
     </form>
-  </div>
+  </div>\n
 EOT;
 
         $this->renderPosts();
         oci_close($this->conn);
+        echo "</div>\n";
     }
 
     function renderPosts() {
@@ -36,16 +37,11 @@ EOT;
         if (!$succ) {
             echo '<div class="post"><p>Error retrieving your posts</p></div>';
             oci_close($conn);
-        } else {
-            echo "Success retrieving posts. Number of results: ",
-                 oci_num_rows($stmt);
         }
 
-        echo "Your posts: [";
         while ($row = oci_fetch_row($stmt)) {
             $this->renderPost($row[0]);
         }
-        echo "]";
         oci_free_statement($stmt);
     }
 
@@ -69,11 +65,22 @@ EOT;
             echo "Couldn't retrieve post: ", $postId;
         }
 
-        $level = 0;
+        $oldLevel = 0;
         while ($row = oci_fetch_assoc($stmt)) {
+            $newLevel = $row['L'];   
+            $row['PARENT_POST_ID'];
             //var_dump($row);
-            echo '<p>',$row['POST_ID'], $row['BODY']->load(), $row['POSTED'],
-                 $row['SCREEN_NAME'], $row['PARENT_POST_ID'], $row['L'],'</p>';
+            echo "<div class=\"post\" style=\"margin-left:${row['L']}em\">","\n";
+            echo '<span class="post-id">#', $row['POST_ID'], '</span>',"\n";
+            echo '<time class="post-time" datetime="', $row['POSTED'],
+                 "\"> ${row['POSTED']}</time>\n";
+            echo '<p class="post-name">', $row['SCREEN_NAME'], ' said:</p>';
+            echo '<pre class="post-body">', $row['BODY']->load(), '</pre>';
+            echo '<form class="reply-form" action="post_reply.php">';
+            echo '<textarea placeholder="Write a reply"></textarea>';
+            echo '<input type="submit" value="Reply"></submit>';
+            echo '</form>';
+            echo "</div>\n";
         }
 
 
