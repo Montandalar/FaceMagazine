@@ -76,7 +76,8 @@ EOT;
             echo '<time class="post-time" datetime="', $row['POSTED'],
                  "\"> ${row['POSTED']}</time>\n";
             echo '<a class="post-name">', $row['SCREEN_NAME'], ' said:</p>';
-            echo '<pre class="post-body">', $row['BODY']->load(), '</pre>';
+            echo '<pre class="post-body">',
+                 htmlspecialchars($row['BODY']->load()), '</pre>';
             echo '<form method="post" class="reply-form" action="post_reply.php">';
             echo '<textarea name="message" placeholder="Write a reply"></textarea>';
             echo '<input type="hidden" name="parent_post" value="',
