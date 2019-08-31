@@ -23,12 +23,13 @@ class Authenticator {
 
     function do_login() {
         if (!isset($_SESSION['email'])) { // absolutely not secure, use a token
-            return $this->authenticate();
+            $result = $this->authenticate();
         }
         else {
             // Already logged in
-            return "Auth successful";
+            $result = "Auth successful";
         }
+        return $result;
     }
 
     private function authenticate() {
@@ -38,7 +39,7 @@ class Authenticator {
             FROM Member
             WHERE email_address = :email';
 
-        $email = $this->email;
+        $email = $this->username;
         $password = $this->password;
 
         $stmt = oci_parse($conn, $query);

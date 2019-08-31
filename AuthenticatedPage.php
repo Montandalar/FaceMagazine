@@ -7,7 +7,6 @@ class AuthenticatedPage extends Component {
         // Security issue: do not use unless the $_SESSION data sent to the
         // client is only the session ID.
         session_start();
-        return;
         if (!isset($_SESSION["email"])) {
             $authenticator = new Authenticator($_POST["email"], $_POST["pw"]);
             $succ = $authenticator->do_login();
