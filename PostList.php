@@ -71,11 +71,11 @@ EOT;
             $row['PARENT_POST_ID'];
             //var_dump($row);
             echo "<div class=\"post\" style=\"margin-left:${row['L']}em\">","\n";
-            echo '<span class="post-id">#', $row['POST_ID'], '</span>',"\n";
+            echo '<a class="post-id" id="postno', $row['POST_ID'], '">#',
+                 $row['POST_ID'], '</a>',"\n";
             echo '<time class="post-time" datetime="', $row['POSTED'],
                  "\"> ${row['POSTED']}</time>\n";
-            echo '<a id="postno',$row['POST_ID'],'" class="post-name">',
-                 $row['SCREEN_NAME'], ' said:</p>';
+            echo '<a class="post-name">', $row['SCREEN_NAME'], ' said:</p>';
             echo '<pre class="post-body">', $row['BODY']->load(), '</pre>';
             echo '<form method="post" class="reply-form" action="post_reply.php">';
             echo '<textarea name="message" placeholder="Write a reply"></textarea>';

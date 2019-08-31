@@ -32,5 +32,5 @@ if (!$succ) {
     exit(1);
 }
 header("http/1.1 303 see other");
-header('location: home.php');
+header("location: home.php#postno$parent");
 ?>
