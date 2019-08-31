@@ -74,10 +74,13 @@ EOT;
             echo '<span class="post-id">#', $row['POST_ID'], '</span>',"\n";
             echo '<time class="post-time" datetime="', $row['POSTED'],
                  "\"> ${row['POSTED']}</time>\n";
-            echo '<p class="post-name">', $row['SCREEN_NAME'], ' said:</p>';
+            echo '<a id="postno',$row['POST_ID'],'" class="post-name">',
+                 $row['SCREEN_NAME'], ' said:</p>';
             echo '<pre class="post-body">', $row['BODY']->load(), '</pre>';
-            echo '<form class="reply-form" action="post_reply.php">';
-            echo '<textarea placeholder="Write a reply"></textarea>';
+            echo '<form method="post" class="reply-form" action="post_reply.php">';
+            echo '<textarea name="message" placeholder="Write a reply"></textarea>';
+            echo '<input type="hidden" name="parent_post" value="',
+                 $row['POST_ID'],'"/>';
             echo '<input type="submit" value="Reply"></submit>';
             echo '</form>';
             echo "</div>\n";
