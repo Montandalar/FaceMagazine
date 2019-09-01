@@ -1,8 +1,8 @@
 <?php
 include "fbl_common.php";
 
-$fields = ["email", "pw", "fname", "scrname", "dob", "gender", "vis",
-"status", "location"];
+$fields = ["email", "pw", "fname", "scr", "dob", "gender", "vis",
+"stat", "loc"];
 
 function validate_fields($fields) {
   $missing = [];
@@ -21,9 +21,9 @@ if ($err == []) {
     $salt = $creds[0];
     $pw = $creds[1];
 
-    add_user($conn, $_POST["email"], $_POST["fname"], $_POST["scrname"],
+    add_user($conn, $_POST["email"], $_POST["fname"], $_POST["scr"],
             $_POST["dob"], $_POST["gender"], $_POST["vis"], $pw,
-            $salt, $_POST["status"], $_POST["location"]);
+            $salt, $_POST["stat"], $_POST["loc"]);
 
     oci_close($conn);
 }
