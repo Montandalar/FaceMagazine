@@ -92,11 +92,7 @@ EOT;
     function renderLikes($postId) {
         $likes = $this->getNumberLikes($postId);
         $userLikes = $this->getUserLikes($postId, $_SESSION['email']);
-        $flavour = $this->getFlavour($postId, $likes);
-        /* Choose a flavour text based on how many people have liked and the
-           name of someone who has like it */
-
-        
+        $flavour = $this->getFlavour($postId, $_SESSION['email'], $likes);
 
         echo '<form method="post" action="like.php">';
         echo "<span class=\"like-flavour\">$flavour</span>";
@@ -110,11 +106,11 @@ EOT;
         echo '</form>';
     }
 
-    function getFlavour($postId, $likes) {
+    function getFlavour($postId, $user, $likes) {
         $flavour = null;
         if ($likes > 0) {
             $queryStr = "
-                select screen_name from ((
+                select screen_name, email_address from ((
                     select MEMBER_EMAIL_ADDRESS from likes 
                     where post_id = :postid and rownum = 1
                 ) join member on member_email_address = email_address)";
@@ -124,9 +120,14 @@ EOT;
             if (!$succ) {
                 echo "Somebody likes this";
             }
-            $name = oci_fetch_row($statementNames)[0];
+            $row = oci_fetch_row($statementNames);
+            $name = $row[0];
+            $email = $row[1];
+            if ($email == $user) {
+                $name = 'You';
+            }
             if ($likes == 1) {
-                $flavour = "$name likes this";
+                $flavour = "$name liked this";
             } elseif ($likes == 2) {
                 $flavour = "$name and 1 other like this";
             } else {
