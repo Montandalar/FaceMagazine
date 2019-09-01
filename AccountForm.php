@@ -5,7 +5,7 @@ class AccountForm extends Component {
     function __construct($children = [], $attribs = []) {
         parent::__construct($children, $attribs);
         foreach (
-        ['action', 'inline', 'email', 'pw', 'fname', 'scrname', 'dob',
+        ['action', 'inline', 'email', 'pw', 'fname', 'scr', 'dob',
             'gender', 'vis', 'loc', 'stat'] as $attr)
         {
             if (!isset($attribs[$attr])) {
@@ -54,11 +54,11 @@ EOT;
             </div>
 EOT;
         }
-        if (!isset($this->attr['omit']['scrname'])) {
+        if (!isset($this->attr['omit']['scr'])) {
             echo <<<EOT
             <div>
-            <label class="formLabel" for="scrname">Screen name</label>
-            <input type="text" name="scrname" value="{$this->attr['scrname']}"
+            <label class="formLabel" for="scr">Screen name</label>
+            <input type="text" name="scr" value="{$this->attr['scr']}"
             required="required"/>
             </div>
 EOT;
@@ -97,19 +97,19 @@ EOT;
 EOT;
         }
 
-        if (!isset($this->attr['omit']['vis'])) {
+        if (!isset($this->attr['omit']['loc'])) {
             echo <<<EOT
             <div>
-            <label class="formlabel" for="location">Your current location</label>
-            <input type="text" name="location" value="{$this->attr['loc']}"/>
+            <label class="formlabel" for="loc">Your current location</label>
+            <input type="text" name="loc" value="{$this->attr['loc']}"/>
             </div>
 EOT;
         }
-        if (!isset($this->attr['omit']['vis'])) {
+        if (!isset($this->attr['omit']['stat'])) {
             echo <<<EOT
             <div>
-            <label class="formlabel" for="location">Your current status</label>
-            <textarea class="status" name="status">{$this->attr['stat']}</textarea>
+            <label class="formlabel" for="stat">Your current status</label>
+            <textarea class="status" name="stat">{$this->attr['stat']}</textarea>
             </div>
 EOT;
         }

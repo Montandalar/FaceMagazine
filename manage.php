@@ -47,7 +47,7 @@ class ManageAccountPage extends AuthenticatedPage {
         oci_close($conn);
         return [
             'inline' => 1,
-            'scrname' => $results[0],
+            'scr' => $results[0],
             'stat' => $results[1],
             'loc' => $results[2],
             'vis' => $results[3],
