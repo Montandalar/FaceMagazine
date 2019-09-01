@@ -7,13 +7,22 @@ class PostList extends Component {
     private $conn;
 
     function renderHTML() {
-        $this->attr['name'] = $_SESSION['email'];
         db_connect($this->conn);
+        $stmt = oci_parse($this->conn,
+                "SELECT Screen_name FROM Member WHERE email_address = :email");
+        oci_bind_by_name($stmt, "email", $_SESSION['email']);
+        $succ = oci_execute($stmt);
+        if (!$succ) {
+            $this->attr['name'] = "FacebookLite user";
+        } else {
+            $this->attr['name'] = oci_fetch_row($stmt)[0];
+        }
+        oci_free_statement($stmt);
         echo <<<EOT
 <div id='main-content-container'>
   <div class="make-post-container">
     <form action="post_reply.php" method="post">
-    <p>What are you up to, {$this->attr['name']}</p>
+    <p>What are you up to, {$this->attr['name']}?</p>
     <textarea name="message"></textarea>
     <input value="Make post" type="submit"/>
     </form>
