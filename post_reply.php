@@ -4,13 +4,10 @@ require_once 'Authenticator.php';
 
 $auth = new Authenticator(null, null);
 $authResult = $auth->do_login();
-echo $authResult;
 
 session_start();
 
-var_dump($_POST);
-
-$parent = $_POST["parent_post"];
+$parent = isset($_POST["parent_post"]) ? $_POST['parent_post'] : null;
 $msg = $_POST["message"];
 
 db_connect($conn);

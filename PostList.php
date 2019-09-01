@@ -12,9 +12,9 @@ class PostList extends Component {
         echo <<<EOT
 <div id='main-content-container'>
   <div class="make-post-container">
-    <form action="make_post.php" method="post">
+    <form action="post_reply.php" method="post">
     <p>What are you up to, {$this->attr['name']}</p>
-    <textarea name="body"></textarea>
+    <textarea name="message"></textarea>
     <input value="Make post" type="submit"/>
     </form>
   </div>\n
@@ -75,24 +75,17 @@ EOT;
                  $row['POST_ID'], '</a>',"\n";
             echo '<time class="post-time" datetime="', $row['POSTED'],
                  "\"> ${row['POSTED']}</time>\n";
-            echo '<a class="post-name">', $row['SCREEN_NAME'], ' said:</p>';
+            echo '<a class="post-name">', $row['SCREEN_NAME'], ' said:</a>';
             echo '<pre class="post-body">',
                  htmlspecialchars($row['BODY']->load()), '</pre>';
             echo '<form method="post" class="reply-form" action="post_reply.php">';
             echo '<textarea name="message" placeholder="Write a reply"></textarea>';
             echo '<input type="hidden" name="parent_post" value="',
                  $row['POST_ID'],'"/>';
-            echo '<input type="submit" value="Reply"></submit>';
+            echo '<input type="submit" value="Reply"></input>';
             echo '</form>';
             echo "</div>\n";
         }
-
-
-        /*
-        echo '<div class="post">
-            <span class="post-id">#</span>
-            */
-        echo $postId, ",";
     }
 }
 /*

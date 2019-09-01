@@ -114,10 +114,7 @@ textarea.status {
   margin: 0.2em
 }
 
-.post-id {
-  font-style: italic;
-}
-
-.post-time { font-size: small}
-.post-name { font-size: smaller}
+.post-id { font-style: italic; }
+.post-time, .post-id { font-size: small}
+.post-name { font-size: large}
 .post-body {font-family: inherit}
