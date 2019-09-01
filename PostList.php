@@ -36,8 +36,42 @@ EOT;
 
     function renderPosts() {
         /* Retrieve the root posts of this user - ones which are not a reply */
-        $queryStr = "SELECT POST_ID FROM POST WHERE PARENT_POST_ID IS NULL AND
-            POSTER_EMAIL_ADDRESS = :email";
+        $queryStr = <<<EOT
+-- All root posts that should appear on the home page for a user
+select post_id from (
+(
+-- All public posts
+select post_id, posted from (
+select post_id, posted, poster_email_address from post where parent_post_id is null)
+join (select email_address from member where visibility = 0)
+on poster_email_address = email_address
+)
+UNION
+-- Posts of friends set to friends only
+(
+select post_id, posted from post
+where parent_post_id is null and poster_email_address in (
+select member from
+    (select email_address from member where visibility = 1)
+    JOIN (
+        -- Friends who have accepted requests
+        SELECT member2 as member from friendship where member1 = :email
+        and accepted is not null
+        union
+        select member1 as member from friendship where member2 = :email
+        and accepted is not null
+    ) on email_address = member
+)
+UNION
+-- Our own posts
+(
+SELECT POST_ID, POSTED FROM POST
+WHERE PARENT_POST_ID IS NULL AND POSTER_EMAIL_ADDRESS = :email
+)
+)
+order by posted desc --newest first
+)
+EOT;
         $stmt = oci_parse($this->conn, $queryStr);
         $email = $_SESSION['email'];
         oci_bind_by_name($stmt, 'email', $email);
