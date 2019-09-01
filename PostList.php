@@ -150,7 +150,9 @@ EOT;
         if (!$succ) {
             return null;
         } else {
-            return oci_fetch_row($stmt)[0] > 0;
+            $result = oci_fetch_row($stmt)[0];
+            oci_free_statement($stmt);
+            return $result;
         }
     }
 
