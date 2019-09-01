@@ -77,7 +77,7 @@ class SearchResults extends Component {
         if ($friendsAlready) {
             ?><td>
                 <form action="remove_friend.php">
-                <input type="submit" value="Remove friend"/><?php
+                <input type="submit" value="Remove friend/Cancel request"/><?php
         } else {
             ?><td>
                 <form action="request_friend.php">
