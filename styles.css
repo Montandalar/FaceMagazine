@@ -118,3 +118,10 @@ textarea.status {
 .post-time, .post-id { font-size: small}
 .post-name { font-size: large}
 .post-body {font-family: inherit}
+
+.friend-request-list {
+  padding: 0;
+  list-style-type: none;
+}
+
+h2#manage-friend-reqs { font-size: medium }
