@@ -78,6 +78,7 @@ EOT;
             echo '<a class="post-name">', $row['SCREEN_NAME'], ' said:</a>';
             echo '<pre class="post-body">',
                  htmlspecialchars($row['BODY']->load()), '</pre>';
+            $this->renderLikes($row['POST_ID']);
             echo '<form method="post" class="reply-form" action="post_reply.php">';
             echo '<textarea name="message" placeholder="Write a reply"></textarea>';
             echo '<input type="hidden" name="parent_post" value="',
@@ -87,6 +88,87 @@ EOT;
             echo "</div>\n";
         }
     }
+
+    function renderLikes($postId) {
+        $likes = $this->getNumberLikes($postId);
+        $userLikes = $this->getUserLikes($postId, $_SESSION['email']);
+        $flavour = $this->getFlavour($postId, $likes);
+        /* Choose a flavour text based on how many people have liked and the
+           name of someone who has like it */
+
+        
+
+        echo '<form method="post" action="like.php">';
+        echo "<span class=\"like-flavour\">$flavour</span>";
+        if ($userLikes) {
+            echo '<input type="submit" value="Unlike" />';
+            echo '<input type="hidden" name="unlike" value="1" />';
+        } else {
+            echo '<input type="submit" value="Like" />';
+        }
+        echo '<input type="hidden" name="like_target" value="',$postId,'"/>';
+        echo '</form>';
+    }
+
+    function getFlavour($postId, $likes) {
+        $flavour = null;
+        if ($likes > 0) {
+            $queryStr = "
+                select screen_name from ((
+                    select MEMBER_EMAIL_ADDRESS from likes 
+                    where post_id = :postid and rownum = 1
+                ) join member on member_email_address = email_address)";
+            $statementNames = oci_parse($this->conn, $queryStr);
+            oci_bind_by_name($statementNames, "postid", $postId);
+            $succ = oci_execute($statementNames);
+            if (!$succ) {
+                echo "Somebody likes this";
+            }
+            $name = oci_fetch_row($statementNames)[0];
+            if ($likes == 1) {
+                $flavour = "$name likes this";
+            } elseif ($likes == 2) {
+                $flavour = "$name and 1 other like this";
+            } else {
+                $flavour = "$name and ".($likes-1)." others like this";
+            }
+            oci_free_statement($statementNames);
+        } else {
+            $flavour = "Be the first to like this";
+        }
+        return $flavour;
+    }
+
+    function getUserLikes($postId, $user) {
+        $queryStr = "select count(*) from likes
+            where post_id = :postid and MEMBER_EMAIL_ADDRESS = :email";
+        $stmt = oci_parse($this->conn, $queryStr);
+        oci_bind_by_name($stmt, "postid", $postId);
+        oci_bind_by_name($stmt, "email", $user);
+        $succ = oci_execute($stmt);
+        if (!$succ) {
+            return null;
+        } else {
+            return oci_fetch_row($stmt)[0] > 0;
+        }
+    }
+
+    function getNumberLikes($postId) {
+       /* Get the total number of likes */
+        $stmtCount = oci_parse($this->conn, "select count(*) from likes where
+                post_id = :postid");
+        oci_bind_by_name($stmtCount, "postid", $postId);
+        $succ = oci_execute($stmtCount);
+
+        $likes = null;
+        if (!$succ) {
+            echo "Error retrieving likes";
+        } else {
+            $likes = oci_fetch_row($stmtCount)[0];
+        }
+        oci_free_statement($stmtCount);
+        return $likes;
+ }
 }
 /*
   <div class="post">
