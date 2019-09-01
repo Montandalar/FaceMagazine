@@ -83,9 +83,11 @@ class SearchResults extends Component {
                 <form action="request_friend.php">
                 <input type="submit" value="Send friend request"/><?php
         }
-        // Common form element
+        // Common form elements
         echo '<input type="hidden" name="target" value="',
              $targetEmail,'"/>';
+        echo '<input type="hidden" name="search_term" value="',
+             $_GET['person'],'"/>';
         echo "</form></td>\n";
         echo "</tr>\n";
     }
