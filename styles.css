@@ -125,3 +125,14 @@ textarea.status {
 }
 
 h2#manage-friend-reqs { font-size: medium }
+
+#manage-friends {
+  display:flex;
+  flex-direction: column;
+  justify-content: space-between;
+  max-height: 20em;
+}
+
+div#manage-friend-reqs {
+  overflow-y: scroll;
+}
