@@ -21,10 +21,9 @@ if ($err == []) {
     $salt = $creds[0];
     $pw = $creds[1];
 
-    add_user($conn, $_POST["email"], $_POST["fname"], $_POST["scr"],
+    $err = add_user($conn, $_POST["email"], $_POST["fname"], $_POST["scr"],
             $_POST["dob"], $_POST["gender"], $_POST["vis"], $pw,
             $salt, $_POST["stat"], $_POST["loc"]);
-
 }
 
 ?>

@@ -46,24 +46,37 @@ function check_password($plaintext, $salt, $digest) {
                                   //constant-time comparison 
 }
 
+/* Attempt to add a user with the provided information to the database. Return an array of errors messages for any missing fields or a message for an existing user */
+
+/* Attempt to add u user with the provided information to the databse. Return an
+ * array of erro messages for any missing fields or a message for an existing
+ * user; an empty array indicates no errors */
 function add_user($client, $email, $fname, $scrname,
         $dob, $gender, $vis, $pw, $salt, $status, $location)
 {
     $collection = $client->fbl->Members;
-    print("collection=$collection");
 
-    $result = $collection->insertOne([
-        '_id' => $email,
-        'full_name' => $fname,
-        'screen_name' => $scrname,
-        'date_of_birth' => $dob,
-        'gender' => $gender,
-        'visibility' => $vis,
-        'password_sum' => $pw,
-        'password_salt' => $salt,
-        'status' => $status,
-        'location' => $location
-    ]);
+    try {
+        $result = $collection->insertOne([
+                '_id' => $email,
+                'full_name' => $fname,
+                'screen_name' => $scrname,
+                'date_of_birth' => $dob,
+                'gender' => $gender,
+                'visibility' => $vis,
+                'password_sum' => $pw,
+                'password_salt' => $salt,
+                'status' => $status,
+                'location' => $location
+        ]);
+
+        return [];
+    } catch (MongoDB\Driver\Exception\BulkWriteException $e) {
+        $code = $e->getCode();
+        if ($code == "11000") {
+            return ["A user with that email already exists!"];
+        }
+    }
 
 }
 ?>
