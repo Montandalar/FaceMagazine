@@ -31,26 +31,28 @@ class ManageAccountPage extends AuthenticatedPage {
     }
 
     function queryUserData() {
-        db_connect($conn);
-        $stmt = oci_parse($conn,
-                'SELECT screen_name, status, location, visibility
-                FROM Member WHERE email_address = :email');
+        db_connect($client);
 
-        $email = $_SESSION['email'];
-        oci_bind_by_name($stmt, "email", $email);
-        oci_execute($stmt);
-        $results = oci_fetch_array($stmt, OCI_NUM | OCI_RETURN_LOBS);
-        if (!$results) {
+        $collection = $client->fbl->Members;
+        $result = $collection->findOne(["_id" => $_SESSION['email']],
+                ['projection' => [
+                    'screen_name' => 1,
+                    'visibility' => 1,
+                    'status' => 1,
+                    'location' => 1 ]]
+                );
+
+        if (!$result) {
             echo "Fatal database error retrieving your profile!";
             exit;
         }
-        oci_close($conn);
+
         return [
             'inline' => 1,
-            'scr' => $results[0],
-            'stat' => $results[1],
-            'loc' => $results[2],
-            'vis' => $results[3],
+            'scr' => $result['screen_name'],
+            'stat' => $result['status'],
+            'loc' => $result['location'],
+            'vis' => $result['visibility'],
             'omit' => [
                 'email' => 1,
                 'pw' => 1,
