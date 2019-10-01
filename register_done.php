@@ -1,5 +1,5 @@
 <?php
-include "fbl_common.php";
+require_once "fbl_common.php";
 
 $fields = ["email", "pw", "fname", "scr", "dob", "gender", "vis",
 "stat", "loc"];
@@ -25,7 +25,6 @@ if ($err == []) {
             $_POST["dob"], $_POST["gender"], $_POST["vis"], $pw,
             $salt, $_POST["stat"], $_POST["loc"]);
 
-    oci_close($conn);
 }
 
 ?>

@@ -33,31 +33,24 @@ class Authenticator {
     }
 
     private function authenticate() {
-        db_connect($conn);
-        $query = 
-            'SELECT password_sum, password_salt
-            FROM Member
-            WHERE email_address = :email';
+        db_connect($client);
 
-        $email = $this->username;
-        $password = $this->password;
+        $collection = $client->fbl->Members;
+        $doc = $collection->findOne(["_id" => $this->username],
+                ["projection" => [
+                    "password_sum" => 1,
+                    "password_salt" => 1   
+                ]]
+        );
 
-        $stmt = oci_parse($conn, $query);
-        oci_bind_by_name($stmt, "email", $email);
-
-        oci_execute($stmt);
-
-        $row = oci_fetch_array($stmt);
-        oci_close($conn);
-        if (!$row) {
+        if ($doc == null) {
             return "No such user";
         }
-        if (!check_password($password, hex2bin($row["PASSWORD_SALT"]),
-                    hex2bin($row["PASSWORD_SUM"])))
+        if (!check_password($this->password, hex2bin($doc["password_salt"]),
+                    hex2bin($doc["password_sum"])))
         {
             return "No such password";
         }
-
 
         // success
         return "Auth successful";

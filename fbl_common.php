@@ -1,4 +1,6 @@
 <?php
+require_once "vendor/autoload.php";
+
 function commonHeader($pageName) {
     echo <<<EOT
     <!DOCTYPE html>
@@ -27,36 +29,15 @@ EOT;
     }
 }
 
-function db_connect(&$handle) {
-    $handle = oci_connect("S3606501", "Oracle4G",
-            "talsprddb01.int.its.rmit.edu.au/CSAMPR1.ITS.RMIT.EDU.AU");
-    if(!$handle) {
-        $e = oci_error();
-        trigger_error(htmlentities($e['message'], ENT_QUOTES), E_USER_ERROR);
-    }
-
-    $stmt = oci_parse($handle, 
-        "ALTER SESSION SET NLS_DATE_FORMAT = 'YYYY-MM-DD'");
-
-    if (!oci_execute($stmt)) {
-        echo "Couldn't set database date format!";
-    }
-
-    $stmt = oci_parse($handle,
-            "ALTER SESSION SET NLS_TIMESTAMP_FORMAT =
-            'YYYY-MM-DD HH24:MI'"
-            );
-
-    if (!oci_execute($stmt)) {
-        echo "Couldn't set the database timestamp format!";
-    }
+function db_connect(&$client) {
+    $client = new MongoDB\Client("mongodb://localhost:27017");
 }
 
 function make_password($plaintext) {
     $salt = openssl_random_pseudo_bytes(8);
     $digest = openssl_digest($plaintext . $salt, "SHA256", TRUE);
 
-    return [$salt, $digest];
+    return [bin2hex($salt), bin2hex($digest)];
 }
 
 function check_password($plaintext, $salt, $digest) {
@@ -65,30 +46,24 @@ function check_password($plaintext, $salt, $digest) {
                                   //constant-time comparison 
 }
 
-function add_user($conn, $email, $fname, $scrname,
+function add_user($client, $email, $fname, $scrname,
         $dob, $gender, $vis, $pw, $salt, $status, $location)
 {
-    $querystr = <<<EOT
-INSERT INTO MEMBER(email_address, full_name, screen_name, date_of_birth, gender,
-        visibility, password_sum, password_salt, status, location)
-VALUES(:email, :fname, :scrname, :dob, :gender, :vis, :pw, :salt, :status, :location)
-EOT;
+    $collection = $client->fbl->Members;
+    print("collection=$collection");
 
-    $pw = bin2hex($pw);
-    $salt = bin2hex($salt);
+    $result = $collection->insertOne([
+        '_id' => $email,
+        'full_name' => $fname,
+        'screen_name' => $scrname,
+        'date_of_birth' => $dob,
+        'gender' => $gender,
+        'visibility' => $vis,
+        'password_sum' => $pw,
+        'password_salt' => $salt,
+        'status' => $status,
+        'location' => $location
+    ]);
 
-    $stmt = oci_parse($conn, $querystr);
-    oci_bind_by_name($stmt, "email", $email);
-    oci_bind_by_name($stmt, "fname", $fname);
-    oci_bind_by_name($stmt, "scrname", $scrname);
-    oci_bind_by_name($stmt, "dob", $dob);
-    oci_bind_by_name($stmt, "gender", $gender);
-    oci_bind_by_name($stmt, "vis", $vis);
-    oci_bind_by_name($stmt, "pw", $pw);
-    oci_bind_by_name($stmt, "salt", $salt);
-    oci_bind_by_name($stmt, "status", $status);
-    oci_bind_by_name($stmt, "location", $location);
-
-    return oci_execute($stmt);
 }
 ?>
