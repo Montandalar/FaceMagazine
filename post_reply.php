@@ -10,24 +10,22 @@ session_start();
 $parent = isset($_POST["parent_post"]) ? $_POST['parent_post'] : null;
 $msg = $_POST["message"];
 
-db_connect($conn);
+db_connect($client);
+$collection = $client->fbl->Posts;
 
-$queryStr = 
-"INSERT INTO POST(post_id, body, posted, poster_email_address, parent_post_id)
-VALUES(seq_postid.nextval, :message, CURRENT_TIMESTAMP, :poster, :parent)";
-
-$stmt = oci_parse($conn, $queryStr);
-
-oci_bind_by_name($stmt, 'message', $msg);
-oci_bind_by_name($stmt, 'poster', $_SESSION['email']);
-oci_bind_by_name($stmt, 'parent', $parent);
-
-$succ = oci_execute($stmt);
-
-if (!$succ) {
+try {
+    $result = $collection->insertOne([
+            "body" => $_POST['message'],
+            "posted" => (new MongoDB\BSON\UTCDateTime(time()*1000)),
+            "poster" => $_SESSION['email'],
+            "parent" => $parent
+            /* Liked will be empty at time of post - any likes added will be upserted */
+    ]);
+} catch (MongoDB\Driver\Exception\BulkWriteException $e) {
     echo "There was an error and we could not process your reply";
     exit(1);
 }
+
 header("http/1.1 303 see other");
 header("location: home.php#postno$parent");
 ?>
