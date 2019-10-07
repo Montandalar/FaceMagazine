@@ -4,20 +4,18 @@ require_once 'fbl_common.php';
 
 class PostList extends Component {
 
-    private $conn;
+    private $client;
 
     function renderHTML() {
-        db_connect($this->conn);
-        $stmt = oci_parse($this->conn,
-                "SELECT Screen_name FROM Member WHERE email_address = :email");
-        oci_bind_by_name($stmt, "email", $_SESSION['email']);
-        $succ = oci_execute($stmt);
-        if (!$succ) {
-            $this->attr['name'] = "FacebookLite user";
-        } else {
-            $this->attr['name'] = oci_fetch_row($stmt)[0];
+        db_connect($this->client);
+        $collection = $this->client->fbl->Members;
+        try {
+            $result = $collection->findOne(["_id" => $_SESSION['email']],
+                ['screen_name' => 1]);
+            $this->attr['name'] = $result['screen_name'];
+        } catch (MongoDB\Driver\Exception\BulkWriteException $e) {
+            $this->attr['name'] = "FacebookLite User";
         }
-        oci_free_statement($stmt);
         echo <<<EOT
 <div id='main-content-container'>
   <div class="make-post-container">
@@ -30,106 +28,88 @@ class PostList extends Component {
 EOT;
 
         $this->renderPosts();
-        oci_close($this->conn);
         echo "</div>\n";
     }
 
     function renderPosts() {
-        /* Retrieve the root posts of this user - ones which are not a reply */
-        $queryStr = <<<EOT
--- All root posts that should appear on the home page for a user
-select post_id from (
-(
--- All public posts
-select post_id, posted from (
-select post_id, posted, poster_email_address from post where parent_post_id is null)
-join (select email_address from member where visibility = 0)
-on poster_email_address = email_address
-)
-UNION
--- Posts of friends set to friends only
-(
-select post_id, posted from post
-where parent_post_id is null and poster_email_address in (
-select member from
-    (select email_address from member where visibility = 1)
-    JOIN (
-        -- Friends who have accepted requests
-        SELECT member2 as member from friendship where member1 = :email
-        and accepted is not null
-        union
-        select member1 as member from friendship where member2 = :email
-        and accepted is not null
-    ) on email_address = member
-)
-UNION
--- Our own posts
-(
-SELECT POST_ID, POSTED FROM POST
-WHERE PARENT_POST_ID IS NULL AND POSTER_EMAIL_ADDRESS = :email
-)
-)
-order by posted desc --newest first
-)
-EOT;
-        $stmt = oci_parse($this->conn, $queryStr);
-        $email = $_SESSION['email'];
-        oci_bind_by_name($stmt, 'email', $email);
-        $succ = oci_execute($stmt);
+        /* Retrieve the root posts of this user - ones which are not a reply
+        This includes -
+        - All root posts that should appear on the home page for a user
+        - All public posts
+        UNION
+        - Posts of friends set to friends only
+        UNION
+        - Our own posts
+        */
 
-        if (!$succ) {
-            echo '<div class="post"><p>Error retrieving your posts</p></div>';
-            oci_close($conn);
+        $collection = $this->client->fbl->Posts;
+        $documents = $collection->find(
+                ["poster" => $_SESSION["email"], "parent" => null],
+                ['projection' => ['_id' => 1]]
+                );
+
+        foreach ($documents as $post) {
+            $this->renderPost($post, 0);
         }
 
-        while ($row = oci_fetch_row($stmt)) {
-            $this->renderPost($row[0]);
-        }
-        oci_free_statement($stmt);
     }
 
-    function renderPost($postId) {
-        /* Select all posts under this with a hierarchical query then render
-           them recursively */
+    function renderPost($post, $level) {
+        $collection = $this->client->fbl->Posts;
 
-        $queryStr = "select post_id, body, posted, screen_name, parent_post_id, l
-            from (
-                select post_id, body, posted, poster_email_address,
-                parent_post_id, level as l from post
-                connect by prior post_id = parent_post_id
-                start with post_id = :post_id
-            ) join member on member.email_address = poster_email_address";
+        /* Select direct descendents of this post with an aggregation,
+           rendering them them recursively. Retrieve them in posted order. */
+		$post = $collection->aggregate([
+            ['$match' => [
+                "_id" => (new MongoDB\BSON\ObjectId($post['_id']))
+            ]],
+            ['$graphLookup' => [
+                "from" => "Posts",
+                "startWith" => (new MongoDB\BSON\ObjectId($post["_id"])),
+                "connectFromField" => "_id",
+                "connectToField" => "parent",
+                "as" => "children",
+                "depthField" => "depth",
+                "maxDepth" => 0
+            ]],
+            ['$sort' => [
+                'posted' => 1
+            ]]
+        ]);
 
-        $stmt = oci_parse($this->conn, $queryStr);
-        oci_bind_by_name($stmt, 'post_id', $postId);
-        $succ = oci_execute($stmt);
+        // Result of the aggregation is only one document
+        $post = $post->toArray()[0];
 
-        if (!$succ) {
-            echo "Couldn't retrieve post: ", $postId;
+        // Render the parent
+        $this->renderSinglePost($post['_id'], $post['body'],
+                date(DateTimeInterface::ISO8601,
+                    $post['posted']->__toString()/1000),
+                $post['poster'], $level);
+
+        $children = $post["children"];
+
+        foreach ($children as $child) {
+            $this->renderPost($child, $level+1);
         }
+    }
 
-        $oldLevel = 0;
-        while ($row = oci_fetch_assoc($stmt)) {
-            $newLevel = $row['L'];   
-            $row['PARENT_POST_ID'];
-            //var_dump($row);
-            echo "<div class=\"post\" style=\"margin-left:${row['L']}em\">","\n";
-            echo '<a class="post-id" id="postno', $row['POST_ID'], '">#',
-                 $row['POST_ID'], '</a>',"\n";
-            echo '<time class="post-time" datetime="', $row['POSTED'],
-                 "\"> ${row['POSTED']}</time>\n";
-            echo '<a class="post-name">', $row['SCREEN_NAME'], ' said:</a>';
-            echo '<pre class="post-body">',
-                 htmlspecialchars($row['BODY']->load()), '</pre>';
-            $this->renderLikes($row['POST_ID']);
-            echo '<form method="post" class="reply-form" action="post_reply.php">';
-            echo '<textarea name="message" placeholder="Write a reply"></textarea>';
-            echo '<input type="hidden" name="parent_post" value="',
-                 $row['POST_ID'],'"/>';
-            echo '<input type="submit" value="Reply"></input>';
-            echo '</form>';
-            echo "</div>\n";
-        }
+    private function renderSinglePost($post_id, $body, $posted, $poster, $level) {
+        echo "<div class=\"post\" style=\"margin-left:${level}em\">","\n";
+        echo '<a class="post-id" id="postno', $post_id, '">#',
+             $post_id, '</a>',"\n";
+        echo '<time class="post-time" datetime="', $posted,
+        "\"> $posted</time>\n";
+        echo '<a class="post-name">', $poster, ' said:</a>';
+        echo '<pre class="post-body">',
+             htmlspecialchars($body), '</pre>';
+        $this->renderLikes($post_id);
+        echo '<form method="post" class="reply-form" action="post_reply.php">';
+        echo '<textarea name="message" placeholder="Write a reply"></textarea>';
+        echo '<input type="hidden" name="parent_post" value="',
+             $post_id,'"/>';
+        echo '<input type="submit" value="Reply"></input>';
+        echo '</form>';
+        echo "</div>\n";
     }
 
     function renderLikes($postId) {
@@ -152,20 +132,14 @@ EOT;
     function getFlavour($postId, $user, $likes) {
         $flavour = null;
         if ($likes > 0) {
-            $queryStr = "
-                select screen_name, email_address from ((
-                    select MEMBER_EMAIL_ADDRESS from likes 
-                    where post_id = :postid and rownum = 1
-                ) join member on member_email_address = email_address)";
-            $statementNames = oci_parse($this->conn, $queryStr);
-            oci_bind_by_name($statementNames, "postid", $postId);
-            $succ = oci_execute($statementNames);
-            if (!$succ) {
+            $collection = $this->client->fbl->Members;
+            $result = $collection->findOne(['_id' => $user], ['_id' => 1,
+                    'screen_name' => 1]);
+            if ($result == null) {
                 echo "Somebody likes this";
             }
-            $row = oci_fetch_row($statementNames);
-            $name = $row[0];
-            $email = $row[1];
+            $name = $result['screen_name'];
+            $email = $result['_id'];
             if ($email == $user) {
                 $name = 'You';
             }
@@ -176,51 +150,38 @@ EOT;
             } else {
                 $flavour = "$name and ".($likes-1)." others like this";
             }
-            oci_free_statement($statementNames);
         } else {
             $flavour = "Be the first to like this";
         }
+
         return $flavour;
     }
 
     function getUserLikes($postId, $user) {
-        $queryStr = "select count(*) from likes
-            where post_id = :postid and MEMBER_EMAIL_ADDRESS = :email";
-        $stmt = oci_parse($this->conn, $queryStr);
-        oci_bind_by_name($stmt, "postid", $postId);
-        oci_bind_by_name($stmt, "email", $user);
-        $succ = oci_execute($stmt);
-        if (!$succ) {
-            return null;
-        } else {
-            $result = oci_fetch_row($stmt)[0];
-            oci_free_statement($stmt);
-            return $result;
-        }
+        $collection = $this->client->fbl->Posts;
+        $result = $collection->findOne(['liked' => $user], ['_id' => 1]);
+        return ($result == null);
     }
 
     function getNumberLikes($postId) {
-       /* Get the total number of likes */
-        $stmtCount = oci_parse($this->conn, "select count(*) from likes where
-                post_id = :postid");
-        oci_bind_by_name($stmtCount, "postid", $postId);
-        $succ = oci_execute($stmtCount);
+        /* Get the total number of likes */
+        $collection = $this->client->fbl->Posts;
+        $result = $collection->aggregate([
+                    ['$match' => [ "_id" => $postId ]],
+                    ['$project' => [
+                        'likes' => [ '$cond' => [
+                            'if' => [ 'isArray' => '$liked' ],
+                            'then' => [ '$size' => ['$ifNull' => ['$liked', []]] ],
+                            'else' => 0
+                        ]]
+                    ]]
+                ]);
 
-        $likes = null;
-        if (!$succ) {
-            echo "Error retrieving likes";
+        $result = $result->toArray();
+        if (count($result) == 0) {
+            return 0;
         } else {
-            $likes = oci_fetch_row($stmtCount)[0];
+            return $result[0]['likes'];
         }
-        oci_free_statement($stmtCount);
-        return $likes;
  }
 }
-/*
-  <div class="post">
-  <p>Body</p>
-  <!-- ... n posts -->
-  </div>
-</div>
-EOT;
-*/
