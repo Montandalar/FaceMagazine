@@ -9,29 +9,33 @@ require_once 'UserActions.php';
 require_once 'FriendReqs.php';
 
 class SearchResults extends Component {
-    private $conn;
+    private $client;
+    private $friends;
 
     function renderHTML() {
-        db_connect($this->conn);
+        db_connect($this->client);
 
-        $queryStr = "
-            select screen_name, full_name, gender, status, location,
-                   email_address
-            from member where upper(screen_name) like '%' || :person || '%'
-            or upper(full_name) like '%' || :person || '%'";
-
+        $members = $this->client->fbl->Members;
         $person = isset($_GET["person"]) ? $_GET["person"] : "";
-        $person = strtoupper($person);
-        $stmt = oci_parse($this->conn, $queryStr);
-        oci_bind_by_name($stmt, "person", $person);
+        $pattern = (new MongoDB\BSON\Regex($person, 'i'));
 
-        $succ = oci_execute($stmt);
+        $results = $members->find([
+                    '$or' => [
+                        ['full_name' => $pattern],
+                        ['screen_name' => $pattern]
+                    ]
+                ],
+                [ 'projection' => [
+                    'screen_name' => 1,
+                    'full_name' => 1,
+                    'gender' => 1,
+                    'status' => 1,
+                    'location' => 1,
+                    'friends' => 1
+                ]]);
 
-        if (!$succ) {
-            echo "Error searching";
-            return;
-        }
-
+        $us = $members->findOne(['_id' => $_SESSION['email']]);
+        $this->friends = isset($us['friends']) ? $us['friends'] : [];
         ?>
 <div id="main-content-container">
 <h1>Friend search results</h1>
@@ -47,33 +51,25 @@ class SearchResults extends Component {
 </tr></thead>
 <tbody>
         <?php
-        while ($row = oci_fetch_row($stmt)) {
+        foreach ($results as $result){
             // Skip ourselves
-            if ($row[5] == $_SESSION['email']) { continue; }
-            $this->renderRow($row);
+            if ($result['_id'] == $_SESSION['email']) { continue; }
+            $this->renderRow($result);
         }
     ?></tbody></table></div>
         <?php
     }
 
-    function renderRow($row) {
+    function renderRow($result) {
         echo '<tr>';
-        for ($col = 0; $col < 5; ++$col) {
-            if ($col == 3) { //status
-                echo '<td>',$row[$col]->load(),'</td>';
-                continue;
-            }
-            echo "<td>",$row[$col],'</td>';
-        }
-        $targetEmail = $row[5];
-        $queryStr = "select COUNT(*) from friendship
-            where (member1 = :us and member2 = :them)
-            or (member2 = :us and member1 = :them)";
-        $stmt = oci_parse($this->conn, $queryStr);
-        oci_bind_by_name($stmt, "us", $_SESSION['email']);
-        oci_bind_by_name($stmt, "them", $targetEmail);
-        $succ = oci_execute($stmt);
-        $friendsAlready = oci_fetch_row($stmt)[0] > 0;
+        echo "<td>${result['screen_name']}</td>";
+        echo "<td>${result['full_name']}</td>";
+        echo "<td>${result['gender']}</td>";
+        echo "<td>${result['status']}</td>";
+        echo "<td>${result['location']}</td>";
+
+        $friendsAlready = in_array($result['_id'], $this->friends);
+
         if ($friendsAlready) {
             ?><td>
                 <form action="remove_friend.php">
@@ -83,6 +79,7 @@ class SearchResults extends Component {
                 <form action="request_friend.php">
                 <input type="submit" value="Send friend request"/><?php
         }
+
         // Common form elements
         echo '<input type="hidden" name="target" value="',
              $targetEmail,'"/>';
