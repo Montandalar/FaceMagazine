@@ -94,6 +94,13 @@ EOT;
     }
 
     private function renderSinglePost($post_id, $body, $posted, $poster, $level) {
+        $collection = $this->client->fbl->Members;
+        $result = $collection->findOne(['_id' => $poster], ['screen_name' => 1]);
+        if ($result == null) {
+            $poster = $somebody;
+        } else {
+            $poster = $result['screen_name'];
+        }
         echo "<div class=\"post\" style=\"margin-left:${level}em\">","\n";
         echo '<a class="post-id" id="postno', $post_id, '">#',
              $post_id, '</a>',"\n";
@@ -160,7 +167,7 @@ EOT;
     function getUserLikes($postId, $user) {
         $collection = $this->client->fbl->Posts;
         $result = $collection->findOne(['liked' => $user], ['_id' => 1]);
-        return ($result == null);
+        return ($result != null);
     }
 
     function getNumberLikes($postId) {
