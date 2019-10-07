@@ -68,7 +68,15 @@ class SearchResults extends Component {
         echo "<td>${result['status']}</td>";
         echo "<td>${result['location']}</td>";
 
-        $friendsAlready = in_array($result['_id'], $this->friends);
+        $friendsAlready = false;
+        foreach ($this->friends as $friend) {
+            if ($friend['accepted'] != null
+                    && $friend['person'] == $result['_id'])
+            {
+                $friendsAlready = true;
+                break;
+            }
+        }
 
         if ($friendsAlready) {
             ?><td>
