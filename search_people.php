@@ -39,7 +39,7 @@ class SearchResults extends Component {
         ?>
 <div id="main-content-container">
 <h1>Friend search results</h1>
-<?php echo "<p>Friends like: $person</p>"; ?>
+<?php echo "<p>Friends like: '$person'</p>"; ?>
 <table id='search-results'>
 <thead><tr>
     <th>Screen name</th>
@@ -70,8 +70,8 @@ class SearchResults extends Component {
 
         $friendsAlready = false;
         foreach ($this->friends as $friend) {
-            if ($friend['accepted'] != null
-                    && $friend['person'] == $result['_id'])
+            // Include requested friends who have not responded
+            if ($friend['person'] == $result['_id'])
             {
                 $friendsAlready = true;
                 break;
@@ -90,7 +90,7 @@ class SearchResults extends Component {
 
         // Common form elements
         echo '<input type="hidden" name="target" value="',
-             $targetEmail,'"/>';
+             $result['_id'],'"/>';
         echo '<input type="hidden" name="search_term" value="',
              $_GET['person'],'"/>';
         echo "</form></td>\n";

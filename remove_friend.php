@@ -6,24 +6,38 @@ session_start();
 $auth = new Authenticator(null, null);
 $authResult = $auth->do_login();
 
-db_connect($conn);
+db_connect($client);
 
-$queryStr = "delete from friendship where
-(member1 = :us and member2 = :them)
-or (member2 = :us and member1 = :them)";
+$us = $_SESSION['email'];
+$them = $_GET['target'];
 
-$stmt = oci_parse($conn, $queryStr);
+$collection = $client->fbl->Members;
 
-oci_bind_by_name($stmt, 'us', $_SESSION['email']);
-oci_bind_by_name($stmt, 'them', $_GET['target']);
+// Update us
+$collection->updateOne(
+    ['_id' => $us,
+    'friends' => [
+        '$elemMatch' => [
+            'person' => $them
+        ]
+    ]],
+    ['$pull' => ['friends' => ['person' => $them]]]
+);
 
-$succ = oci_execute($stmt);
+// Update them
+$collection->updateOne(
+    ['_id' => $them,
+    'friends' => [
+        '$elemMatch' => [
+            'person' => $them
+        ]
+    ]],
+    ['$pull' => ['friends' => ['person' => $us]]]
+);
 
-if (!$succ) {
-    echo "There was an error and we could not process your friendship
-        cancellation request.";
-    exit(1);
-}
+// Allow mongo to throw any exceptions, they should not be made except in
+// exceptional circumstances
+
 header("http/1.1 303 see other");
 header("location: search_people.php?person=".$_POST['searchTerm']);
 ?>

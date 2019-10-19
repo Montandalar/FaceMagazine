@@ -8,21 +8,31 @@ $authResult = $auth->do_login();
 
 db_connect($conn);
 
-$queryStr =
-    "INSERT INTO FRIENDSHIP (Member1, Member2, Accepted)
-    VALUES (:us, :them, NULL)";
+$us = $_SESSION['email'];
+$them = $_GET['target'];
 
-$stmt = oci_parse($conn, $queryStr);
+// Make the friend request idempotently - if we already friends, do nothing
+$collection = $conn->fbl->Members;
+$collection->updateOne(
+    ['_id' => $us,
+     'friends' => [
+         '$not' => [
+             '$elemMatch' => [
+                'person' => $them
+                ]
+            ]
+        ]
+    ],
+    ['$addToSet' => [
+        'friends' => [
+            'person' => $them
+        ]
+    ]]
+);
 
-oci_bind_by_name($stmt, 'us', $_SESSION['email']);
-oci_bind_by_name($stmt, 'them', $_GET['target']);
 
-$succ = oci_execute($stmt);
+// Allow mongo to throw any exceptions, they should not be made except in // exceptional circumstances
 
-if (!$succ) {
-    echo "There was an error and we could not process your friend request.";
-    exit(1);
-}
 header("http/1.1 303 see other");
 header("location: search_people.php?person=".$_POST['searchTerm']);
 ?>
