@@ -73,7 +73,7 @@ EOT;
                 "maxDepth" => 0
             ]],
             ['$sort' => [
-                'posted' => 1
+                'posted' => -1
             ]]
         ]);
 
