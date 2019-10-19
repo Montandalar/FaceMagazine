@@ -13,47 +13,40 @@ class FriendReqs extends Component {
         echo '<div id="manage-friend-reqs">';
         echo '<ul class="friend-request-list">';
 
-        db_connect($conn);
-        $queryStr = "select screen_name, email_address from (
-                        select member1 from friendship
-                        where accepted is null and
-                        member2 = :email)
-                    join MEMBER on MEMBER1 = EMAIL_ADDRESS";
-        $stmt = oci_parse($conn, $queryStr);
-        oci_bind_by_name($stmt, "email", $_SESSION['email']);
-        $succ = oci_execute($stmt);
-        if (!$succ) {
-            echo "<span>Error retrieving friend requests</span></div>";
-            goto cleanup;
-        }
+        db_connect($client);
+        $collection = $client->fbl->Members;
+        $requests = $collection->find(
+                ["friends" => [ '$elemMatch' =>
+                    [ "person" => $_SESSION['email'],
+                      'accepted' => [
+                        '$exists' => false
+                      ]
+                    ]
+                ]],
+                ["id" => 1]
+        );
 
-        $counter = 0;
         echo '<h2 id="manage-friend-reqs">Manage friend requests</h2>';
-        while ($row = oci_fetch_row($stmt)) {
-            $this->renderRequest($row);
-            $counter++;
+        $anyRequests = false;
+        foreach ($requests as $request) {
+            $this->renderRequest($request);
+            $anyRequests = $anyRequests || true;
         }
-        if ($counter == 0) {
+        if (!$anyRequests) {
             echo "<span>No current friend requests</span>"; 
         }
 
-        /*echo "Rendered $counter reqs<Br/>";
-        echo "email: ",$_SESSION['email'];*/
-        echo '</div>';
-        cleanup: {
-            oci_free_statement($stmt);
-            oci_close($conn);
-        }
     }
 
-    function renderRequest($row) {
+    function renderRequest($request) {
         ?><li class="friend-request"><?php
-        echo '<span class="friend-request-name">',$row[0],'</span>';
+        echo '<span class="friend-request-name">',
+             $request['screen_name'],'</span>';
         ?><form action="befriend.php" method="post"><?php
         echo '<input type="submit" value="Accept friend request"/>';
         // This is why it's not good to use the email as a primary key - we have
         // just exposed someone's email address
-        echo '<input type="hidden" name="target" value="',$row[1],'"/>';
+        echo '<input type="hidden" name="target" value="',$request['_id'],'"/>';
         ?></form></li><?php
     }
 
