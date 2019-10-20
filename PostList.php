@@ -32,6 +32,7 @@ EOT;
     }
 
     function renderPosts() {
+        $before = microtime(true);
         /* Retrieve the root posts of this user - ones which are not a reply
         This includes -
         - All root posts that should appear on the home page for a user
@@ -85,6 +86,9 @@ EOT;
         foreach ($documents as $post) {
             $this->renderPost($post, 0);
         }
+        $after = microtime(true);
+        $diff = $after - $before;
+        echo "Executed in $diff seconds";
 
     }
 
