@@ -13,23 +13,29 @@ $them = $_GET['target'];
 
 // Make the friend request idempotently - if we already friends, do nothing
 $collection = $conn->fbl->Members;
-$collection->updateOne(
-    ['_id' => $us,
-     'friends' => [
-         '$not' => [
-             '$elemMatch' => [
-                'person' => $them
+
+function addRequest($memA, $memB, $requester, $collection) {
+    $collection->updateOne(
+        ['_id' => $memA,
+         'friends' => [
+             '$not' => [
+                 '$elemMatch' => [
+                    'person' => $memB
+                    ]
                 ]
             ]
-        ]
-    ],
-    ['$addToSet' => [
-        'friends' => [
-            'person' => $them
-        ]
-    ]]
-);
+        ],
+        ['$addToSet' => [
+            'friends' => [
+                'person' => $memB,
+                'requester' => $requester
+            ]
+        ]]
+    );
+}
 
+addRequest($us, $them, $us, $collection);
+addRequest($them, $us, $us, $collection);
 
 // Allow mongo to throw any exceptions, they should not be made except in // exceptional circumstances
 

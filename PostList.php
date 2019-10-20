@@ -45,7 +45,9 @@ EOT;
         $collection = $this->client->fbl->Posts;
         $documents = $collection->find(
                 ["poster" => $_SESSION["email"], "parent" => null],
-                ['projection' => ['_id' => 1]]
+
+                ['projection' => ['_id' => 1],
+                ['$sort' => ["posted" => -1]]]
                 );
 
         foreach ($documents as $post) {

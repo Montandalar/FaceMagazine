@@ -13,27 +13,20 @@ $them = $_GET['target'];
 
 $collection = $client->fbl->Members;
 
-// Update us
-$collection->updateOne(
-    ['_id' => $us,
-    'friends' => [
-        '$elemMatch' => [
-            'person' => $them
-        ]
-    ]],
-    ['$pull' => ['friends' => ['person' => $them]]]
-);
+function remove_friend($memA, $memB, $collection) {
+    $collection->updateOne(
+        ['_id' => $memA,
+        'friends' => [
+            '$elemMatch' => [
+                'person' => $memB
+            ]
+        ]],
+        ['$pull' => ['friends' => ['person' => $memB]]]
+    );
+}
 
-// Update them
-$collection->updateOne(
-    ['_id' => $them,
-    'friends' => [
-        '$elemMatch' => [
-            'person' => $them
-        ]
-    ]],
-    ['$pull' => ['friends' => ['person' => $us]]]
-);
+remove_friend($us, $them, $collection);
+remove_friend($them, $us, $collection);
 
 // Allow mongo to throw any exceptions, they should not be made except in
 // exceptional circumstances
