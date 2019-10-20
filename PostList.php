@@ -35,6 +35,7 @@ EOT;
     }
 
     function renderPosts() {
+        $before = microtime(true);
         /* Retrieve the root posts of this user - ones which are not a reply */
         $queryStr = <<<EOT
 -- All root posts that should appear on the home page for a user
@@ -85,6 +86,9 @@ EOT;
         while ($row = oci_fetch_row($stmt)) {
             $this->renderPost($row[0]);
         }
+        $after = microtime(true);
+        $diff = $after - $before;
+        echo "Executed in $diff seconds";
         oci_free_statement($stmt);
     }
 
