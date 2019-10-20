@@ -42,13 +42,40 @@ EOT;
         - Our own posts
         */
 
-        $collection = $this->client->fbl->Posts;
-        $documents = $collection->find(
-                ["poster" => $_SESSION["email"], "parent" => null],
+        $posts = $this->client->fbl->Posts;
+        $members = $this->client->fbl->Members;
+        $us = $_SESSION['email'];
+        $friends = $members->aggregate([
+                [ '$match' => [
+                        '$or' => [
+                            ['_id' => $us],
+                            [
+                                'visibility' => "1",
+                                'friends' => [
+                                    '$elemMatch' => [
+                                        'person' => $us,
+                                        'accepted' => [
+                                            '$exists' => true
+                                        ]
+                                    ]
+                                ]
+                            ],
+                            ['visibility' => '0']
+                        ]
+                    ]
+                ],
+                [
+                    '$project' => ['_id' => 1]
+                ]
+            ]);
 
-                ['projection' => ['_id' => 1],
-                ['$sort' => ["posted" => -1]]]
-                );
+        $friendIDs = [];
+        foreach ($friends as $friend) {
+            array_push($friendIDs, $friend['_id']);
+        }
+        $documents = $posts->find([
+            "poster" => [ '$in' => $friendIDs]
+        ]);
 
         foreach ($documents as $post) {
             $this->renderPost($post, 0);
