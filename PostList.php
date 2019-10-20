@@ -151,7 +151,8 @@ EOT;
     function renderLikes($postId) {
         $likes = $this->getNumberLikes($postId);
         $userLikes = $this->getUserLikes($postId, $_SESSION['email']);
-        $flavour = $this->getFlavour($postId, $_SESSION['email'], $likes);
+        $flavour = $this->getFlavour($postId, $_SESSION['email'], $likes,
+                $userLikes);
 
         echo '<form method="post" action="like.php">';
         echo "<span class=\"like-flavour\">$flavour</span>";
@@ -165,24 +166,46 @@ EOT;
         echo '</form>';
     }
 
-    function getFlavour($postId, $user, $likes) {
+    function getFlavour($postId, $us, $likes, $userLikes) {
         $flavour = null;
         if ($likes > 0) {
-            $collection = $this->client->fbl->Members;
-            $result = $collection->findOne(['_id' => $user], ['_id' => 1,
-                    'screen_name' => 1]);
-            if ($result == null) {
-                echo "Somebody likes this";
+            $posts = $this->client->fbl->Posts;
+            $result = $posts->findOne(
+                    [
+                        '_id' => $postId,
+                        'liked' => [
+                            '$elemMatch' => [ '$ne' => null]
+                        ]
+                    ],
+                    [
+                        'projection' => [
+                            'liked.$' => 1
+                        ]
+                    ]
+                );
+            $who = $result['liked'][0];
+            if (isset($result) && $result != null) {
+                $members = $this->client->fbl->Members;
+                $mem = $members->findOne(['_id' => $who],
+                    ['projection' => [
+                        'screen_name' => 1
+                    ]]
+                );
+                $name = $mem['screen_name'];
             }
-            $name = $result['screen_name'];
-            $email = $result['_id'];
-            if ($email == $user) {
+            if ($who == $us) {
                 $name = 'You';
             }
             if ($likes == 1) {
                 $flavour = "$name liked this";
             } elseif ($likes == 2) {
-                $flavour = "$name and 1 other like this";
+                if ($userLikes) {
+                    $flavour = "You and $name like this";
+                } else {
+                    $flavour = "$name and another person like this";
+                }
+            } elseif ($likes == 3 && $userLikes) {
+                $flavour = "You, $name and another person like this";
             } else {
                 $flavour = "$name and ".($likes-1)." others like this";
             }
@@ -195,8 +218,15 @@ EOT;
 
     function getUserLikes($postId, $user) {
         $collection = $this->client->fbl->Posts;
-        $result = $collection->findOne(['liked' => $user], ['_id' => 1]);
-        return ($result != null);
+        $res =  $collection->count( [
+                "_id" => $postId,
+                "liked" => [
+                    '$elemMatch' => [
+                        '$eq' => $user
+                    ]
+                ]
+            ]) > 0;
+        return $res;
     }
 
     function getNumberLikes($postId) {
