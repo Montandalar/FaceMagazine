@@ -8,8 +8,36 @@ class DeleteAction extends AuthenticatedPage {
 
         db_connect($client);
         $collection = $client->fbl->Members;
-        $result = $collection->
-            deleteOne(['_id' => $_SESSION['email']]);
+        $us = $_SESSION['email'];
+        $result = $collection-> deleteOne(['_id' => $us]);
+        $collection->updateMany([
+                "friends" => [
+                    '$elemMatch' => [
+                        'person' => $us
+                    ]
+                ]],
+                [
+                '$pull' => [
+                    'friends' => [
+                        'person' => $us
+                    ]
+                ]]
+            );
+        $collection->updateMany(
+            [
+                'liked' => [
+                    '$elemMatch' => [
+                        '$eq' => $us
+                    ]
+                ]
+
+            ],
+            [
+                '$pull' => [
+                    'liked' => $us
+                ]
+            ]
+            );
 
         if ($result->getDeletedCount() > 0) {
             session_destroy();
