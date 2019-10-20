@@ -7,7 +7,12 @@ $authResult = $auth->do_login();
 
 session_start();
 
-$parent = isset($_POST["parent_post"]) ? $_POST['parent_post'] : null;
+$parent = isset($_POST["parent_post"]);
+if (isset($_POST["parent_post"])) {
+    $parent = (new MongoDb\BSON\ObjectId($_POST['parent_post']));
+} else {
+    $parent = null;
+}
 $msg = $_POST["message"];
 
 db_connect($client);

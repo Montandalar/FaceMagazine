@@ -74,8 +74,13 @@ EOT;
             array_push($friendIDs, $friend['_id']);
         }
         $documents = $posts->find([
-            "poster" => [ '$in' => $friendIDs]
-        ]);
+            "poster" => [ '$in' => $friendIDs],
+            "parent" => null
+            ],
+            ['sort' => [
+                'posted' => -1
+            ]]
+        );
 
         foreach ($documents as $post) {
             $this->renderPost($post, 0);
@@ -90,11 +95,11 @@ EOT;
            rendering them them recursively. Retrieve them in posted order. */
 		$post = $collection->aggregate([
             ['$match' => [
-                "_id" => (new MongoDB\BSON\ObjectId($post['_id']))
+                "_id" => $post['_id']
             ]],
             ['$graphLookup' => [
                 "from" => "Posts",
-                "startWith" => (new MongoDB\BSON\ObjectId($post["_id"])),
+                "startWith" =>  $post['_id'],
                 "connectFromField" => "_id",
                 "connectToField" => "parent",
                 "as" => "children",
