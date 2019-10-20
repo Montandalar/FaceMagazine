@@ -9,13 +9,14 @@ session_start();
 
 db_connect($client);
 $collection = $client->fbl->Posts;
+$likeTarget = $_POST['like_target'];
 
 $operator = '$addToSet';
 if (isset($_POST["unlike"])) {
     $operator = '$pull';
 }   
 $result = $collection->updateOne(
-    ["_id" => (new MongoDB\BSON\ObjectId($_POST['like_target']))],
+    ["_id" => (new MongoDB\BSON\ObjectId($likeTarget))],
     [$operator => ['liked' => $_SESSION['email']]]
 );
 
