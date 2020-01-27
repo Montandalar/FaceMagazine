@@ -31,7 +31,7 @@ if ($err == []) {
 <!DOCTYPE html>
 <html>
 <head>
-<title>FacebookLite: Registering...</title>
+<title>FaceMagazine: Registering...</title>
 </head>
 
 <body>

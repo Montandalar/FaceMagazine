@@ -5,7 +5,7 @@ commonHeader("Login");
 
 <body>
 
-<h1>FacebookLite: Login/Register</h1>
+<h1>FaceMagazine: Login/Register</h1>
 <form class="form-box" action="home.php" method="post">
   <?php
   if (isset($_GET['failed'])) {

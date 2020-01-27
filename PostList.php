@@ -13,7 +13,7 @@ class PostList extends Component {
         oci_bind_by_name($stmt, "email", $_SESSION['email']);
         $succ = oci_execute($stmt);
         if (!$succ) {
-            $this->attr['name'] = "FacebookLite user";
+            $this->attr['name'] = "FaceMagazine user";
         } else {
             $this->attr['name'] = oci_fetch_row($stmt)[0];
         }
