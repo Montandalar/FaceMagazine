@@ -6,7 +6,7 @@ function commonHeader($pageName) {
     <!DOCTYPE html>
     <html>
     <head>
-    <title>FacebookLite - $pageName</title>
+    <title>FaceMagazine - $pageName</title>
     <link rel="stylesheet" type="text/css" href="styles.css" media="screen">
     </head>
 EOT;

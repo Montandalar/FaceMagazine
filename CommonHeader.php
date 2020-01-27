@@ -7,7 +7,7 @@ class CommonHeader extends Component {
 <!DOCTYPE html>
 <html>
 <head>
-    <title>FacebookLite - {$this->attr['title']}</title>
+    <title>FaceMagazine - {$this->attr['title']}</title>
     <link rel="stylesheet" type="text/css" href="styles.css" media="screen">
     <meta charset="utf-8">
 </head>

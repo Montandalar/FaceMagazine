@@ -14,7 +14,7 @@ class PostList extends Component {
                 ['screen_name' => 1]);
             $this->attr['name'] = $result['screen_name'];
         } catch (MongoDB\Driver\Exception\BulkWriteException $e) {
-            $this->attr['name'] = "FacebookLite User";
+            $this->attr['name'] = "FaceMagazine User";
         }
         echo <<<EOT
 <div id='main-content-container'>
